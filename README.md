@@ -1,8 +1,8 @@
-# Textor Predictor Agent 📝
+# Textor Predictor Agent 
 
 Un agente inteligente de predicción de texto en español que utiliza un enfoque **híbrido multinivel** para ofrecer sugerencias precisas, rápidas y personalizadas. Diseñado específicamente para textos en español con adaptación dinámica al estilo del usuario.
 
-## 🎯 Visión General
+##  Visión General
 
 **Textor Predictor** es una aplicación full-stack que predice la siguiente palabra mientras el usuario escribe, utilizando una arquitectura que combina tres modelos de machine learning con diferentes características:
 
@@ -12,7 +12,7 @@ Usuario escribe → Procesamiento → Predicción Híbrida → Sugerencias perso
 
 ---
 
-## 🏗️ Arquitectura General
+## Arquitectura General
 
 ### Stack Tecnológico
 
@@ -49,7 +49,7 @@ Textor-preditor-agent/
 
 ---
 
-## 🧠 El Modelo Híbrido: La Decisión Clave
+##  El Modelo Híbrido: La Decisión Clave
 
 ### ¿Por qué un enfoque híbrido y no un solo modelo?
 
@@ -57,11 +57,11 @@ La tarea de predicción de texto tiene **tres requisitos conflictivos**:
 
 | Requisito | Trie | N-gramas | LSTM |
 |-----------|------|----------|------|
-| **Velocidad** | ⚡⚡⚡ | ⚡⚡ | ⚡ (lenta) |
-| **Autocompletado** | ✅ Excelente | ❌ Pobre | ❌ No aplica |
-| **Contexto Semántico** | ❌ Nulo | ⚠️ Limitado (3-5 palabras) | ✅ Profundo |
-| **Precisión General** | ⚠️ Depende corpus | ✅ Buena | ✅✅ Muy buena |
-| **Recursos** | 📊 Mínimos | 📊 Bajos | 🔴 Altos |
+| **Velocidad** | Excelente | Excelente | (lenta) |
+| **Autocompletado** | Excelente |  Pobre |  No aplica |
+| **Contexto Semántico** |  Nulo |  Limitado (3-5 palabras) |  Profundo |
+| **Precisión General** |  Depende corpus |  Buena |  Muy buena |
+| **Recursos** |  Mínimos |  Bajos |  Altos |
 
 ### Nuestra Solución: Ensemble Ponderado
 
@@ -70,7 +70,7 @@ En lugar de elegir un modelo, **combinamos los tres** con pesos inteligentes:
 ```python
 # De models/predictor.py (líneas 70-110)
 
-# 1️⃣ TRIE: Autocompletado rápido (confianza: 0.7)
+# 1️ TRIE: Autocompletado rápido (confianza: 0.7)
 if last_token:
     trie_completions = self.trie.search_prefix(last_token)
     for word in trie_completions[:max_suggestions]:
@@ -80,14 +80,14 @@ if last_token:
             "source": "trie"
         }
 
-# 2️⃣ N-GRAMAS: Patrón lingüístico (combina con peso 1.0)
+# 2️ N-GRAMAS: Patrón lingüístico (combina con peso 1.0)
 ngram_predictions = self.ngram_model.predict_next(
     tokens[-3:],  # Últimas 3 palabras (trigrama)
     k=max_suggestions
 )
 # ... merge con promedio simple (50-50)
 
-# 3️⃣ LSTM: Contexto profundo (combina con peso 0.6)
+# 3️ LSTM: Contexto profundo (combina con peso 0.6)
 lstm_predictions = self.lstm_model.predict_next(tokens, k=max_suggestions)
 # ... merge con ponderación: 0.4 * anterior + 0.6 * LSTM
 predictions[word]["confidence"] = \
@@ -102,9 +102,9 @@ predictions[word]["confidence"] = \
 
 ---
 
-## 📊 Los Tres Modelos Explicados
+##  Los Tres Modelos Explicados
 
-### 1. **TRIE (Prefijo-árbol)** ⚡ - Velocidad e Inmediatez
+### 1. **TRIE (Prefijo-árbol)**  - Velocidad e Inmediatez
 
 ```python
 # De utils/trie.py - Búsqueda por prefijo
@@ -129,13 +129,13 @@ Un Trie es una estructura de árbol donde cada nodo representa una letra:
 ```
 
 #### Ventajas:
-- ✅ Búsqueda O(m) donde m es la longitud del prefijo
-- ✅ Perfecto para autocompletado
-- ✅ Sin overhead de ML
+-  Búsqueda O(m) donde m es la longitud del prefijo
+-  Perfecto para autocompletado
+-  Sin overhead de ML
 
 #### Limitaciones:
-- ❌ No entiende contexto ("gat" podría ser "gatillo" o "gato")
-- ❌ No aprende del corpus, solo estructura
+-  No entiende contexto ("gat" podría ser "gatillo" o "gato")
+-  No aprende del corpus, solo estructura
 
 #### Caso de uso en nuestra app:
 ```
@@ -145,7 +145,7 @@ Trie responde inmediatamente: ["gato", "gente", "gobierno", "gala"]
 
 ---
 
-### 2. **N-GRAMAS (Cadenas de Markov)** 🔗 - Patrón Lingüístico
+### 2. **N-GRAMAS (Cadenas de Markov)**  - Patrón Lingüístico
 
 ```python
 # De models/ngrams.py - Trigramas (3 palabras)
@@ -167,15 +167,15 @@ Trigrama: ("El", "gato", ???)
 ```
 
 #### Ventajas:
-- ✅ Captura patrones reales del lenguaje español
-- ✅ Rápido (búsqueda en diccionario O(1))
-- ✅ No requiere entrenamiento ML pesado
-- ✅ Interpretable (puedes ver por qué predice algo)
+-  Captura patrones reales del lenguaje español
+-  Rápido (búsqueda en diccionario O(1))
+-  No requiere entrenamiento ML pesado
+-  Interpretable (puedes ver por qué predice algo)
 
 #### Limitaciones:
-- ❌ Solo mira últimas 3 palabras (no contexto largo)
-- ❌ Si nunca ve "El gato X" en corpus, falla
-- ❌ No entiende significado
+-  Solo mira últimas 3 palabras (no contexto largo)
+-  Si nunca ve "El gato X" en corpus, falla
+-  No entiende significado
 
 #### Implementación clave:
 
@@ -199,7 +199,7 @@ Predice (frecuencia en corpus español): ["perro", "gato", "ratón"]
 
 ---
 
-### 3. **LSTM (Red Neuronal Recurrente)** 🧠 - Contexto Profundo
+### 3. **LSTM (Red Neuronal Recurrente)**  - Contexto Profundo
 
 ```python
 # De models/lstm_model.py - Secuencias largas
@@ -230,16 +230,16 @@ Input: [El, gato, de, mi, vecina, que, es, muy]
 ```
 
 #### Ventajas:
-- ✅ Entiende dependencias a largo plazo
-- ✅ Captura semántica ("vecina" → género femenino)
-- ✅ Mejor precisión con contexto complejo
-- ✅ Aprende patrones implícitos del español
+-  Entiende dependencias a largo plazo
+-  Captura semántica ("vecina" → género femenino)
+-  Mejor precisión con contexto complejo
+-  Aprende patrones implícitos del español
 
 #### Limitaciones:
-- ❌ Más lenta (forward pass O(n))
-- ❌ Requiere computación (GPU ideal)
-- ❌ Menos interpretable ("caja negra")
-- ❌ Requiere más datos de entrenamiento
+-  Más lenta (forward pass O(n))
+-  Requiere computación (GPU ideal)
+-  Menos interpretable ("caja negra")
+-  Requiere más datos de entrenamiento
 
 #### Arquitectura en nuestro código:
 
@@ -263,7 +263,7 @@ LSTM lee TODO esto y predice: ["es", "será", "está", "está",...]
 
 ---
 
-## 🔄 Flujo de Predicción Paso a Paso
+##  Flujo de Predicción Paso a Paso
 
 ### Cuando el usuario escribe "El gat":
 
@@ -352,7 +352,7 @@ LSTM lee TODO esto y predice: ["es", "será", "está", "está",...]
 
 ---
 
-## 👤 Adaptación de Usuario (UserAdapter)
+##  Adaptación de Usuario (UserAdapter)
 
 ### ¿Por qué es crucial?
 
@@ -410,7 +410,7 @@ def _apply_user_preferences(self, predictions: Dict, user_adapter):
 
 ---
 
-## 🔗 Integración Backend-Frontend
+##  Integración Backend-Frontend
 
 ### API REST (FastAPI)
 
@@ -482,31 +482,31 @@ const handleSelectPrediction = (word) => {
 
 ---
 
-## 📈 Comparación con Otros Enfoques
+##  Comparación con Otros Enfoques
 
 ### ¿Por qué NO usar solo...?
 
-#### ❌ **Google Keyboard (RNN/Transformer puro)**
+####  **Google Keyboard (RNN/Transformer puro)**
 - **Ventaja**: Ultra-preciso, entiende contexto profundo
 - **Desventaja**: Requiere GPU, millones de parámetros, latencia >100ms
 - **Nuestro caso**: Menos recursos, debe correr en CPU
 
-#### ❌ **Predicción por Diccionario Simple**
+####  **Predicción por Diccionario Simple**
 - **Ventaja**: Ultra-rápido
 - **Desventaja**: No entiende contexto, baja precisión
 - **Nuestro caso**: Necesitamos precisión razonable
 
-#### ❌ **Solo LSTM**
+####  **Solo LSTM**
 - **Ventaja**: Mejor precisión teórica
 - **Desventaja**: Lentitud inaceptable en autocompletado, overhead computacional
 - **Nuestro caso**: El usuario espera respuesta <50ms
 
-#### ❌ **Solo N-gramas**
+####  **Solo N-gramas**
 - **Ventaja**: Rápido, interpretable
 - **Desventaja**: No captura contexto lejano, calidad mediocre
 - **Nuestro caso**: El usuario podría escribir párrafos largos
 
-#### ✅ **Nuestro Enfoque Híbrido**
+####  **Nuestro Enfoque Híbrido**
 ```
 Trie (velocidad) + N-gramas (patrones) + LSTM (contexto)
 = Balance perfecto de velocidad, precisión y recursos
@@ -514,7 +514,7 @@ Trie (velocidad) + N-gramas (patrones) + LSTM (contexto)
 
 ---
 
-## 🚀 Decisiones de Diseño Clave
+##  Decisiones de Diseño Clave
 
 ### 1. **Español como Primera Clase**
 
@@ -534,10 +534,10 @@ class SpanishTokenizer:
 ### 2. **Arquitectura sin Dependencies Externas de ML**
 
 NO usamos TensorFlow/PyTorch porque:
-- ✅ Menos dependencias = fácil de deployar
-- ✅ Control total del código
-- ✅ Personalizables para casos específicos
-- ✅ Documentación propia
+-  Menos dependencias = fácil de deployar
+-  Control total del código
+-  Personalizables para casos específicos
+-  Documentación propia
 
 ```python
 # Implementamos LSTM from scratch (numpy based)
@@ -560,17 +560,9 @@ async def send_feedback(request: FeedbackRequest):
     # Próximas predicciones reflejan esto
 ```
 
-### 4. **Separación Frontend-Backend Clara**
+##  Validación y Evaluación
 
-- Backend es **agnóstico** a la UI
-- Frontend puede ser web, mobile, terminal
-- Comunicación vía REST API estándar
-
----
-
-## 🔬 Validación y Evaluación
-
-### Métricas Clave
+### Métricas
 
 ```
 Accuracy = correct_predictions / total_predictions
@@ -597,7 +589,7 @@ for text in texts:
 
 ---
 
-## 📦 Deployment
+## Deployment
 
 ```yaml
 # docker-compose.yml
@@ -629,34 +621,6 @@ Acceder a: `http://localhost:5173`
 
 ---
 
-## 🎓 Conclusión
 
-**Textor Predictor Agent** demuestra que la mejor solución para predicción de texto **no es un modelo único**, sino un **ensemble inteligente** que:
 
-1. ✅ **Es rápido** (Trie: <1ms)
-2. ✅ **Es preciso** (LSTM + contexto)
-3. ✅ **Es eficiente** (N-gramas: O(1) lookup)
-4. ✅ **Personaliza** (UserAdapter)
-5. ✅ **Mejora continuamente** (feedback loop)
 
-### La Ecuación del Éxito:
-
-```
-Velocidad (Trie) + Patrón (N-gramas) + Contexto (LSTM) + Personalización (UserAdapter)
-= Predicción Inteligente en Español
-```
-
----
-
-## 📞 Contribuciones
-
-¿Ideas para mejorar el sistema? Consideramos:
-- [ ] Agregar modelo de corrección ortográfica
-- [ ] Sincronización multi-dispositivo
-- [ ] Análisis de sentimiento en contexto
-- [ ] Cuantización de LSTM para mayor velocidad
-
----
-
-**Hecho con ❤️ en Python + React**  
-_Joseph-hs - 2026_
