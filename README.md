@@ -1,6 +1,6 @@
 # Textor Predictor Agent 
 
-Un agente inteligente de predicción de texto en español que utiliza un enfoque **híbrido multinivel** para ofrecer sugerencias precisas, rápidas y personalizadas. Diseñado específicamente para textos en español con adaptación dinámica al estilo del usuario.
+Un agente inteligente de predicción de texto en español que emplea una estrategia **híbrida multinivel** para brindar sugerencias precisas, rápidas y personalizadas. Diseñado específicamente para textos en español, adaptándose dinámicamente al estilo del usuario.
 
 ##  Visión General
 
@@ -531,20 +531,7 @@ class SpanishTokenizer:
         # - Palabras compuestas
 ```
 
-### 2. **Arquitectura sin Dependencies Externas de ML**
-
-NO usamos TensorFlow/PyTorch porque:
--  Menos dependencias = fácil de deployar
--  Control total del código
--  Personalizables para casos específicos
--  Documentación propia
-
-```python
-# Implementamos LSTM from scratch (numpy based)
-# No: from tensorflow.keras import LSTM
-```
-
-### 3. **Feedback Loop Inmediato**
+### 2. **Feedback Loop Inmediato**
 
 Cada selección del usuario mejora el modelo:
 
