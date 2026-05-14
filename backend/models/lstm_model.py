@@ -7,60 +7,127 @@ import logging
 logger = logging.getLogger(__name__)
 
 class LSTMModel:
-    def __init__(self, vocab_size: int = 500, embedding_dim: int = 128, lstm_units: int = 256):
+    """
+    Modelo LSTM para capturar relaciones semánticas y contexto profundo.
+    Aprende patrones complejos en el lenguaje español.
+    """
+    
+    def __init__(self, vocab_size: int = 500, embedding_dim: int = 128,
+                 lstm_units: int = 256):
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
         self.lstm_units = lstm_units
+        
         self.word_to_idx = {}
         self.idx_to_word = {}
         self.model = None
         self.is_trained = False
     
     def train(self, words: List[str], epochs: int = 3):
+        """
+        Entrena el modelo LSTM.
+        
+        Args:
+            words: Lista de palabras del corpus
+            epochs: Número de épocas de entrenamiento
+        """
+        # Construir vocabulario
         unique_words = sorted(set(words))
         self.word_to_idx = {word: idx for idx, word in enumerate(unique_words)}
         self.idx_to_word = {idx: word for word, idx in self.word_to_idx.items()}
+        
+        # Crear secuencias para entrenamiento
         sequences = []
         for i in range(len(words) - 1):
             if words[i] in self.word_to_idx:
-                sequences.append([self.word_to_idx[words[i]], self.word_to_idx.get(words[i + 1], 0)])
+                sequences.append([
+                    self.word_to_idx[words[i]],
+                    self.word_to_idx.get(words[i + 1], 0)
+                ])
+        
         if not sequences:
             logger.warning("No hay suficientes secuencias para entrenar LSTM")
             return
+        
         X = np.array([seq[0] for seq in sequences]).reshape(-1, 1)
-        y = tf.keras.utils.to_categorical([seq[1] for seq in sequences], num_classes=len(self.word_to_idx))
+        y = tf.keras.utils.to_categorical(
+            [seq[1] for seq in sequences],
+            num_classes=len(self.word_to_idx)
+        )
+        
+        # Construir modelo
         self.model = keras.Sequential([
-            keras.layers.Embedding(input_dim=len(self.word_to_idx), output_dim=self.embedding_dim, input_length=1),
+            keras.layers.Embedding(
+                input_dim=len(self.word_to_idx),
+                output_dim=self.embedding_dim,
+                input_length=1
+            ),
             keras.layers.LSTM(self.lstm_units, return_sequences=False),
             keras.layers.Dropout(0.3),
             keras.layers.Dense(128, activation='relu'),
             keras.layers.Dropout(0.2),
             keras.layers.Dense(len(self.word_to_idx), activation='softmax')
         ])
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        self.model.fit(X, y, epochs=epochs, batch_size=32, verbose=0, validation_split=0.2)
+        
+        self.model.compile(
+            optimizer='adam',
+            loss='categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        # Entrenar
+        self.model.fit(
+            X, y,
+            epochs=epochs,
+            batch_size=32,
+            verbose=0,
+            validation_split=0.2
+        )
+        
         self.is_trained = True
-        logger.info(f"LSTM entrenado: {len(self.word_to_idx)} palabras")
+        logger.info(f"LSTM entrenado: {len(self.word_to_idx)} palabras en vocabulario")
     
     def predict_next(self, context: List[str], k: int = 5) -> List[Tuple[str, float]]:
+        """
+        Predice las siguientes palabras más probables.
+        
+        Args:
+            context: Lista de palabras anteriores
+            k: Número de predicciones
+        
+        Returns:
+            Lista de tuplas (palabra, probabilidad)
+        """
         if not self.is_trained or self.model is None:
             return []
+        
         try:
+            # Tomar la última palabra del contexto
             last_word = context[-1] if context else None
+            
             if not last_word or last_word not in self.word_to_idx:
                 return []
+            
+            # Preparar entrada
             word_idx = self.word_to_idx[last_word]
             input_data = np.array([[word_idx]])
+            
+            # Predecir
             predictions = self.model.predict(input_data, verbose=0)[0]
+            
+            # Obtener top k
             top_k_indices = np.argsort(predictions)[-k:][::-1]
+            
             results = []
             for idx in top_k_indices:
                 if idx in self.idx_to_word:
                     word = self.idx_to_word[idx]
                     confidence = float(predictions[idx])
-                    if confidence > 0.01:
+                    if confidence > 0.01:  # Filtrar confianzas muy bajas
                         results.append((word, confidence))
+            
             return results
+            
         except Exception as e:
-            logger.error(f"Error en prediccion LSTM: {str(e)}")
+            logger.error(f"Error en predicción LSTM: {str(e)}")
             return []
