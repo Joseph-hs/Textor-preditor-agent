@@ -7,11 +7,10 @@ Un agente inteligente de prediccion de texto en espanol que aprende y se adapta 
 - Prediccion en Tiempo Real: Sugerencias mientras escribes
 - Adaptacion Dinamica: Aprende de tu estilo de escritura
 - Algoritmo Hibrido Robusto: N-gramas + LSTM + Trie
-- Interfaz Calida: Anaranjados, dorados, tonos tierra
-- Sin Emojis: Diseno limpio y profesional
-- Corpus de 500+ Palabras: Entrenado desde cero
-- Backend Robusto: FastAPI + Python
-- Frontend Responsivo: React con Tailwind CSS
+- Interfaz simple
+- Corpus de 500+ Palabras
+- Backend: FastAPI + Python
+- Frontend: React con Tailwind CSS
 
 ## Inicio Rapido
 
