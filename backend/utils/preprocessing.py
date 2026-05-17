@@ -1,36 +1,38 @@
 import re
-import unicodedata
+
+SPANISH_REPLACEMENTS = str.maketrans({
+    "á": "a",
+    "é": "e",
+    "í": "i",
+    "ó": "o",
+    "ú": "u",
+    "ü": "u",
+    "Á": "a",
+    "É": "e",
+    "Í": "i",
+    "Ó": "o",
+    "Ú": "u",
+    "Ü": "u",
+})
+
+
+def normalize_spanish(text: str) -> str:
+    """Normaliza tildes manteniendo la distinción de la letra ñ."""
+    return text.translate(SPANISH_REPLACEMENTS).lower()
+
+
+def normalize_token(token: str) -> str:
+    """Normaliza un token individual para uso interno del modelo."""
+    normalized = normalize_spanish(token)
+    normalized = re.sub(r"[^a-zñ]", "", normalized)
+    return normalized.strip()
+
 
 def clean_text(text: str) -> str:
     """
-    Limpia y normaliza el texto.
-    
-    Args:
-        text: Texto a limpiar
-    
-    Returns:
-        Texto limpio
+    Limpia y normaliza el texto preservando tokens útiles para el modelo.
     """
-    # Eliminar acentos
-    text = remove_accents(text)
-    
-    # Convertir a minúsculas
-    text = text.lower()
-    
-    # Eliminar caracteres especiales (mantener espacios y letras)
-    text = re.sub(r'[^a-záéíóúñ\s]', '', text)
-    
-    # Eliminar espacios múltiples
-    text = re.sub(r'\s+', ' ', text)
-    
-    # Eliminar espacios al inicio y final
-    text = text.strip()
-    
-    return text
-
-def remove_accents(text: str) -> str:
-    """
-    Elimina acentos del texto.
-    """
-    nfkd_form = unicodedata.normalize('NFKD', text)
-    return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    normalized = normalize_spanish(text)
+    normalized = re.sub(r"[^a-zñ\s]", " ", normalized)
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized.strip()

@@ -6,7 +6,7 @@ export default function InputField({
   onSend, 
   placeholder 
 }) {
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSend();
@@ -15,21 +15,27 @@ export default function InputField({
 
   return (
     <div className="input-container">
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyPress={handleKeyPress}
-        placeholder={placeholder}
-        className="input-field"
-        rows="3"
-      />
-      <button
-        onClick={onSend}
-        className="send-button"
-        disabled={!value.trim()}
-      >
-        Enviar
-      </button>
+      <div className="composer-panel">
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="input-field"
+          rows="3"
+        />
+
+        <div className="composer-footer">
+          <p className="composer-hint">Enter para enviar. Shift + Enter para salto de línea.</p>
+          <button
+            onClick={onSend}
+            className="send-button"
+            disabled={!value.trim()}
+          >
+            Enviar
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

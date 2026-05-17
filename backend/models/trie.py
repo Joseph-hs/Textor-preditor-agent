@@ -1,23 +1,18 @@
-from typing import List
+from typing import List, Tuple
+
 
 class TrieNode:
     """
-    Estructura Trie (árbol de prefijos) para autocompletado rápido.
-    Búsqueda en O(m) donde m es la longitud del prefijo.
+    Estructura Trie para autocompletado rápido con ranking por frecuencia.
     """
-    
+
     def __init__(self):
         self.children = {}
         self.is_end = False
         self.word = ""
-    
-    def insert(self, word: str):
-        """
-        Inserta una palabra en el Trie.
-        
-        Args:
-            word: Palabra a insertar
-        """
+        self.frequency = 0
+
+    def insert(self, word: str, weight: int = 1):
         node = self
         for char in word:
             if char not in node.children:
@@ -25,40 +20,27 @@ class TrieNode:
             node = node.children[char]
         node.is_end = True
         node.word = word
-    
-    def search_prefix(self, prefix: str, max_results: int = 10) -> List[str]:
-        """
-        Busca todas las palabras que comienzan con el prefijo dado.
-        
-        Args:
-            prefix: Prefijo a buscar
-            max_results: Número máximo de resultados
-        
-        Returns:
-            Lista de palabras que coinciden
-        """
+        node.frequency += weight
+
+    def search_prefix(self, prefix: str, max_results: int = 10) -> List[Tuple[str, int]]:
         node = self
-        
-        # Navegar hasta el prefijo
+
         for char in prefix:
             if char not in node.children:
                 return []
             node = node.children[char]
-        
-        # Obtener todas las palabras con este prefijo
+
         results = []
-        self._dfs(node, results, max_results)
-        return results
-    
-    def _dfs(self, node: 'TrieNode', results: List[str], max_results: int):
-        """
-        Búsqueda en profundidad para encontrar todas las palabras.
-        """
+        self._dfs(node, results, max_results * 3)
+        results.sort(key=lambda item: (-item[1], item[0]))
+        return results[:max_results]
+
+    def _dfs(self, node: "TrieNode", results: List[Tuple[str, int]], max_results: int):
         if len(results) >= max_results:
             return
-        
+
         if node.is_end:
-            results.append(node.word)
-        
-        for child in node.children.values():
-            self._dfs(child, results, max_results)
+            results.append((node.word, node.frequency))
+
+        for char in sorted(node.children.keys()):
+            self._dfs(node.children[char], results, max_results)

@@ -5,20 +5,21 @@ import PredictionBox from './PredictionBox';
 import { api } from '../services/api';
 import '../styles/animations.css';
 
-export default function ChatInterface({ userId }) {
+export default function ChatInterface({ userId, username }) {
   const [messages, setMessages] = useState([]);
   const [currentInput, setCurrentInput] = useState('');
   const [predictions, setPredictions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userStats, setUserStats] = useState(null);
   const messagesEndRef = useRef(null);
+  const firstName = username?.trim().split(/\s+/)[0] || 'escritor';
+  const wordsLearned = userStats?.words_learned ?? 0;
+  const accuracy = userStats ? `${(userStats.accuracy * 100).toFixed(1)}%` : '0.0%';
 
-  // Auto-scroll a los mensajes más nuevos
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Cargar estadísticas del usuario
   useEffect(() => {
     loadUserStats();
   }, [userId]);
@@ -61,10 +62,9 @@ export default function ChatInterface({ userId }) {
   const handleSelectPrediction = (word) => {
     const newInput = currentInput + word + ' ';
     setCurrentInput(newInput);
-    
-    // Registrar feedback
+
     api.sendFeedback(currentInput, word, userId).catch(console.error);
-    
+
     setPredictions([]);
     loadUserStats();
   };
@@ -81,11 +81,10 @@ export default function ChatInterface({ userId }) {
         })
       };
 
-      setMessages([...messages, newMessage]);
+      setMessages((prev) => [...prev, newMessage]);
       setCurrentInput('');
       setPredictions([]);
 
-      // Simular respuesta del agente
       setTimeout(() => {
         const agentMessage = {
           id: Date.now() + 1,
@@ -104,52 +103,91 @@ export default function ChatInterface({ userId }) {
   };
 
   return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <h1 className="chat-title">Textor Predictor Agent</h1>
-        {userStats && (
-          <div className="stats-bar">
-            <span className="stat-item">
-              Palabras aprendidas: <strong>{userStats.words_learned}</strong>
-            </span>
-            <span className="stat-item">
-              Precisión: <strong>{(userStats.accuracy * 100).toFixed(1)}%</strong>
-            </span>
-          </div>
-        )}
-      </div>
+    <div className="chat-page">
+      <div className="chat-shell">
+        <div className="chat-header">
+          <div className="chat-header-main">
+            <div className="chat-heading">
+              <span className="section-label">Workspace de escritura</span>
+              <h1 className="chat-title">Textor Predictor Agent</h1>
+              <p className="chat-subtitle">
+                Una interfaz más limpia para redactar, completar ideas y dejar que
+                las sugerencias trabajen contigo en segundo plano.
+              </p>
+            </div>
 
-      <div className="messages-container">
-        {messages.length === 0 ? (
-          <div className="empty-state">
-            <h2>Bienvenido a Textor Predictor</h2>
-            <p>Comienza a escribir y recibe sugerencias inteligentes</p>
+            <div className="chat-header-badge">
+              <span className="status-dot" />
+              Modelo activo
+            </div>
           </div>
-        ) : (
-          messages.map(message => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-            />
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {predictions.length > 0 && (
+          <div className="chat-overview">
+            <div className="chat-user-card">
+              <span className="chat-user-label">Sesión actual</span>
+              <strong>{username || 'Invitado'}</strong>
+              <p>
+                Hola, {firstName}. Empieza una idea y Textor propondrá el
+                siguiente paso.
+              </p>
+            </div>
+
+            <div className="stats-bar">
+              <div className="stat-card">
+                <span className="stat-label">Palabras aprendidas</span>
+                <strong>{wordsLearned}</strong>
+              </div>
+              <div className="stat-card">
+                <span className="stat-label">Precisión estimada</span>
+                <strong>{accuracy}</strong>
+              </div>
+              <div className="stat-card">
+                <span className="stat-label">Sugerencias activas</span>
+                <strong>{predictions.length}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="messages-container">
+          {messages.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-card">
+                <span className="empty-state-badge">Listo para escribir</span>
+                <h2>
+                  Empieza con una frase y deja que Textor complete el ritmo de tu
+                  texto.
+                </h2>
+                <p>
+                  Las sugerencias aparecerán debajo del chat a medida que avances,
+                  manteniendo una experiencia tranquila y enfocada.
+                </p>
+              </div>
+            </div>
+          ) : (
+            messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+              />
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
         <PredictionBox
           predictions={predictions}
           onSelectPrediction={handleSelectPrediction}
           isLoading={isLoading}
         />
-      )}
 
-      <InputField
-        value={currentInput}
-        onChange={handleInputChange}
-        onSend={handleSendMessage}
-        placeholder="Escribe aquí..."
-      />
+        <InputField
+          value={currentInput}
+          onChange={handleInputChange}
+          onSend={handleSendMessage}
+          placeholder="Escribe una idea, una frase o un párrafo..."
+        />
+      </div>
     </div>
   );
 }

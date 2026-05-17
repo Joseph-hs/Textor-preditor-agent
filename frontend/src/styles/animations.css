@@ -1,36 +1,46 @@
-@keyframes slideIn {
+@keyframes riseIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes fadeIn {
+@keyframes softFade {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+.login-shell,
+.chat-shell {
+  animation: softFade 0.45s ease-out;
 }
 
-.chat-container {
-  animation: fadeIn 0.5s ease-out;
+.message-bubble,
+.prediction-box,
+.empty-state-card,
+.preview-card,
+.highlight-card {
+  animation: riseIn 0.35s ease-out;
 }
 
-.message-bubble {
-  animation: slideIn 0.3s ease-out;
+@media (prefers-reduced-motion: reduce) {
+  .login-shell,
+  .chat-shell,
+  .message-bubble,
+  .prediction-box,
+  .empty-state-card,
+  .preview-card,
+  .highlight-card {
+    animation: none;
+  }
 }

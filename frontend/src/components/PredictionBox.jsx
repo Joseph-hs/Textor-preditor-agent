@@ -11,9 +11,14 @@ export default function PredictionBox({
 
   return (
     <div className="prediction-box">
-      <p className="prediction-label">
-        {isLoading ? 'Analizando...' : 'Palabras sugeridas:'}
-      </p>
+      <div className="prediction-header">
+        <p className="prediction-label">
+          {isLoading ? 'Analizando el contexto...' : 'Sugerencias disponibles'}
+        </p>
+        {!isLoading && (
+          <span className="prediction-count">{predictions.length} opciones</span>
+        )}
+      </div>
       <div className="prediction-list">
         {predictions.map((pred, idx) => (
           <button

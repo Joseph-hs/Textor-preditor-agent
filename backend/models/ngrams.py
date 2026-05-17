@@ -1,81 +1,100 @@
-from collections import defaultdict, Counter
-from typing import List, Tuple
-import numpy as np
+from collections import Counter, defaultdict
+from typing import Dict, List, Tuple
 import logging
 
 logger = logging.getLogger(__name__)
 
+START_TOKEN = "<START>"
+END_TOKEN = "<END>"
+
+
 class NGramModel:
     """
-    Modelo de N-gramas con cadenas de Markov.
-    Predice la siguiente palabra basada en patrones de secuencias.
+    Modelo de n-gramas con backoff para aprovechar mejor el contexto.
     """
-    
+
     def __init__(self, n: int = 3):
-        """
-        Args:
-            n: Tamaño del n-grama (por defecto trigramas)
-        """
         self.n = n
-        self.ngrams = defaultdict(Counter)
+        self.ngrams: Dict[int, defaultdict] = {
+            order: defaultdict(Counter) for order in range(1, n)
+        }
         self.vocab = set()
-    
-    def train(self, words: List[str]):
+        self.unigram_counts = Counter()
+
+    def train(self, sequences: List[List[str]]):
         """
-        Entrena el modelo con una lista de palabras.
-        Construye tabla de frecuencias de n-gramas.
+        Entrena el modelo con una lista de secuencias de tokens.
         """
-        # Agregar tokens especiales
-        padded_words = ["<START>"] * (self.n - 1) + words + ["<END>"]
-        self.vocab = set(words)
-        
-        # Crear n-gramas
-        for i in range(len(padded_words) - self.n + 1):
-            ngram = tuple(padded_words[i:i + self.n - 1])
-            next_word = padded_words[i + self.n - 1]
-            self.ngrams[ngram][next_word] += 1
-        
-        logger.info(f"NGramModel entrenado: {len(self.ngrams)} n-gramas únicos")
-    
+        for tokens in sequences:
+            if not tokens:
+                continue
+
+            padded = [START_TOKEN] * (self.n - 1) + tokens + [END_TOKEN]
+            self.vocab.update(tokens)
+            self.unigram_counts.update(tokens)
+
+            for order in range(1, self.n):
+                for index in range(len(padded) - order):
+                    context = tuple(padded[index:index + order])
+                    next_word = padded[index + order]
+                    self.ngrams[order][context][next_word] += 1
+
+        logger.info(
+            "NGramModel entrenado: %s contextos y %s tokens de vocabulario",
+            sum(len(model) for model in self.ngrams.values()),
+            len(self.vocab),
+        )
+
     def predict_next(self, context: List[str], k: int = 5) -> List[Tuple[str, float]]:
         """
-        Predice las siguientes k palabras más probables.
-        
-        Args:
-            context: Lista de palabras anteriores (contexto)
-            k: Número de predicciones
-        
-        Returns:
-            Lista de tuplas (palabra, probabilidad)
+        Predice las siguientes palabras más probables usando backoff.
         """
-        # Tomar los últimos (n-1) tokens como contexto
-        context = context[-(self.n - 1):]
-        context_tuple = tuple(context)
-        
-        # Si no existe el contexto, retornar palabras frecuentes
-        if context_tuple not in self.ngrams:
+        if not self.unigram_counts:
+            return []
+
+        scores = Counter()
+        max_order = min(self.n - 1, len(context))
+
+        for order in range(max_order, 0, -1):
+            context_tuple = tuple(context[-order:])
+            if context_tuple not in self.ngrams[order]:
+                continue
+
+            next_words = self.ngrams[order][context_tuple]
+            total_count = sum(next_words.values())
+            distance = max_order - order
+            weight = 1.0 if distance == 0 else 0.18 / distance
+
+            for word, count in next_words.items():
+                if word == END_TOKEN:
+                    continue
+                scores[word] += weight * (count / total_count)
+
+        if not scores:
             return self._get_frequent_words(k)
-        
-        # Obtener distribución de palabras siguientes
-        next_words = self.ngrams[context_tuple]
-        total_count = sum(next_words.values())
-        
-        # Calcular probabilidades
-        predictions = [
-            (word, count / total_count)
-            for word, count in next_words.most_common(k)
-        ]
-        
-        return predictions
-    
+
+        if len(scores) < k:
+            for word, prob in self._get_frequent_words(k * 2):
+                scores[word] += prob * 0.04
+
+        return self._normalize_scores(scores, k)
+
     def _get_frequent_words(self, k: int = 5) -> List[Tuple[str, float]]:
-        """Retorna palabras más frecuentes cuando no hay contexto."""
-        all_counts = Counter()
-        for counter in self.ngrams.values():
-            all_counts.update(counter)
-        
-        total = sum(all_counts.values())
+        total = sum(self.unigram_counts.values())
+        if total == 0:
+            return []
+
         return [
             (word, count / total)
-            for word, count in all_counts.most_common(k)
+            for word, count in self.unigram_counts.most_common(k)
+        ]
+
+    def _normalize_scores(self, scores: Counter, k: int) -> List[Tuple[str, float]]:
+        total_score = sum(scores.values())
+        if total_score <= 0:
+            return []
+
+        return [
+            (word, score / total_score)
+            for word, score in scores.most_common(k)
         ]

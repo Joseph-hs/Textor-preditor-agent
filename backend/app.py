@@ -1,8 +1,7 @@
 from fastapi import FastAPI, WebSocket, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List
 import json
 import logging
 from datetime import datetime
@@ -64,7 +63,7 @@ async def startup_event():
     logger.info("Iniciando Textor Predictor Agent...")
     
     corpus = load_corpus()
-    logger.info(f"Corpus cargado: {len(corpus)} palabras")
+    logger.info(f"Corpus cargado: {len(corpus)} oraciones")
     
     predictor = TextPredictor(corpus)
     logger.info("Modelo predictor inicializado")
@@ -108,6 +107,7 @@ async def predict(request: PredictionRequest):
             max_suggestions=request.max_suggestions,
             user_adapter=adapter
         )
+        adapter.increment_prediction_count()
         
         # Separar sugerencias y confianza
         suggestions = [p["word"] for p in predictions]
