@@ -1,6 +1,6 @@
 # Textor Predictor Agent 
 
-Un agente inteligente de prediccion de texto en espanol que aprende y se adapta segun tu forma de escribir. Interfaz tipo ChatGPT con colores calidos y diseno minimalista.
+Un agente inteligente de prediccion de texto en espanol que aprende y se adapta segun tu forma de escribir.
 
 ## Caracteristicas
 
